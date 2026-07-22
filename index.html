@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="1800">
+<title>증시 각도기 · 시장 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --up:#ff5563;          /* 상승: 빨강 */
+    --down:#3aa0ff;        /* 하락: 파랑 */
+    --flat:#c2cbe6;
+    --txt:#eef2ff;
+    --muted:#8b96b8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--txt);
+    min-height:100vh;
+    background-color:#070c22;
+    background-image:
+      radial-gradient(1000px 560px at 50% -10%, rgba(86,70,170,.30), rgba(86,70,170,0) 60%),
+      radial-gradient(820px 620px at 84% 10%, rgba(46,78,150,.20), rgba(46,78,150,0) 55%),
+      linear-gradient(165deg,#080d24 0%,#0a1130 50%,#0a1638 100%);
+    background-repeat:no-repeat;
+    background-size:100% 100%;
+    padding:0 0 60px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+
+  /* ── 상단 바 ── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:22px 4px 6px;flex-wrap:wrap;gap:10px}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand-logo{height:34px;width:auto;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+  .brand-text{display:none;align-items:center;gap:9px;font-weight:900;font-style:italic;
+    font-size:21px;letter-spacing:-.5px;
+    background:linear-gradient(90deg,#7fb0ff,#c7b3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand-text svg{filter:drop-shadow(0 2px 6px rgba(120,150,255,.45))}
+  .updated{font-size:13px;color:var(--muted)}
+  .updated b{color:#c3ccec;font-weight:700}
+
+  /* ── 섹션 ── */
+  section{margin-top:38px}
+  .sec-head{text-align:center;margin-bottom:22px}
+  .sec-head h2{font-size:28px;font-weight:900;letter-spacing:-1px;text-shadow:0 3px 18px rgba(0,0,0,.4)}
+  .sec-head p{margin-top:6px;font-size:12.5px;color:var(--muted);font-weight:500}
+
+  /* ── 그리드: 3열 고정, 소분류는 한 줄 전체를 차지해 줄바꿈 유도 ── */
+  .grid{display:grid;gap:13px;grid-template-columns:repeat(3,1fr)}
+  .subhead{grid-column:1/-1;display:flex;align-items:center;gap:12px;
+    margin:12px 2px 1px;font-size:13.5px;font-weight:700;color:#9aa5c8;letter-spacing:.3px}
+  .subhead:first-child{margin-top:0}
+  .subhead::after{content:"";flex:1;height:1px;
+    background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,0))}
+
+  /* ── 가로형 다크 글래스 카드 (은은하게) ── */
+  .card{
+    display:flex;align-items:center;gap:12px;
+    padding:15px 18px;border-radius:15px;
+    background:rgba(255,255,255,.037);
+    border:1px solid rgba(255,255,255,.075);
+    backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);
+    box-shadow:0 6px 18px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.05);
+    transition:background .16s ease, transform .16s ease;
+  }
+  .card:hover{background:rgba(255,255,255,.06);transform:translateY(-2px)}
+
+  .left{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+  .flag{width:26px;height:26px;flex:none;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;
+    background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .name{font-size:15px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e7ecff}
+
+  .right{text-align:right;flex:none}
+  .cur{font-size:21px;font-weight:900;letter-spacing:-.5px;line-height:1.05}
+  .cur.up{color:var(--up)} .cur.down{color:var(--down)} .cur.flat{color:#fff}
+  .sub{margin-top:3px;font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+  .sub .prev b{color:#b9c2e4;font-weight:700}
+  .sub .chg{font-weight:800;margin-left:6px}
+  .sub .chg.up{color:var(--up)} .sub .chg.down{color:var(--down)} .sub .chg.flat{color:var(--flat)}
+  .arrow{font-size:9px;vertical-align:1px}
+
+  footer{margin-top:44px;text-align:center;font-size:12px;color:#727ea6;line-height:1.7}
+
+  @media(max-width:900px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:600px){
+    .grid{grid-template-columns:1fr;gap:10px}
+    .sec-head h2{font-size:23px}
+    .card{padding:13px 15px}
+    .cur{font-size:19px}
+    .brand{font-size:18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="updated">최근 업데이트 <b id="updated">—</b> <span style="opacity:.6">(KST)</span></div>
+    <div class="brand">
+      <!-- 저장소 최상위에 logo.png 를 올리면 이 로고가 표시됩니다. 없으면 아래 텍스트가 대신 표시돼요. -->
+      <img src="logo.png" alt="증시 각도기" class="brand-logo"
+           onerror="this.style.display='none';document.getElementById('brandText').style.display='flex'">
+      <span id="brandText" class="brand-text">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 16.5 10 10l3.5 3.5L20 6" stroke="#8fb4ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 6h5v5" stroke="#c7b3ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        증시 각도기
+      </span>
+    </div>
+  </div>
+  <div id="app"></div>
+  <footer>
+    매일 오전 6:40(KST) 자동 기록 · 당일 종가와 직전 거래일 종가를 비교합니다.<br>
+    데이터: 미국 재무부 · stooq · Yahoo Finance · 투자 판단의 근거로 사용하기 전 원자료를 확인하세요.
+  </footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+function cardHTML(it){
+  const d = it.direction;
+  const arrow = d==='up' ? '▲' : d==='down' ? '▼' : '·';
+  const sign  = d==='up' ? '+' : d==='down' ? '-' : '';
+  const chg = it.change==='—'
+     ? `<span class="chg flat">—</span>`
+     : `<span class="chg ${d}"><span class="arrow">${arrow}</span> ${sign}${it.pct}%</span>`;
+  return `<div class="card">
+      <div class="left"><div class="flag">${it.icon}</div><div class="name">${it.name}</div></div>
+      <div class="right">
+        <div class="cur ${d}">${it.cur}</div>
+        <div class="sub"><span class="prev">전일 <b>${it.prev}</b></span>${chg}</div>
+      </div>
+   </div>`;
+}
+
+function groupHTML(g){
+  const inner = g.subgroups.map(sub=>
+    `<div class="subhead">${sub.label}</div>` + sub.items.map(cardHTML).join('')
+  ).join('');
+  return `<section>
+      <div class="sec-head"><h2>${g.title}</h2><p>${g.subtitle}</p></div>
+      <div class="grid">${inner}</div>
+    </section>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!DATA || !DATA.groups){ app.innerHTML='<p style="text-align:center;color:#8b96b8;margin-top:40px">데이터를 불러오는 중입니다. 첫 자동 업데이트 이후 표시됩니다.</p>'; return; }
+  document.getElementById('updated').textContent = DATA.updated || '—';
+  app.innerHTML = DATA.groups.map(groupHTML).join('');
+}
+render();
+</script>
+</body>
+</html>
